@@ -1,0 +1,66 @@
+service: ptrack
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+
+functions:
+  api:
+    handler: app.main.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+
+  trigger-scraper:
+    handler: app.scraper_trigger.handler
+    events:
+      - schedule: rate(1 day)
+
+resources:
+  Resources:
+    ProductsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-products-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    ScraperTaskDefinition:
+      Type: AWS::ECS::TaskDefinition
+      Properties:
+        Family: scraper-task
+        Cpu: '256'
+        Memory: '512'
+        NetworkMode: awsvpc
+        RequiresCompatibilities:
+          - FARGATE
+        ContainerDefinitions:
+          - Name: scraper
+            Image: ${self:custom.scraperImage}
+            Essential: true
+            LogConfiguration:
+              LogDriver: awslogs
+              Options:
+                awslogs-group: /ecs/scraper-task
+                awslogs-region: ${self:provider.region}
+                awslogs-stream-prefix: ecs
+
+    ScraperCluster:
+      Type: AWS::ECS::Cluster
+      Properties:
+        ClusterName: scraper-cluster
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux  scraperImage: your-scraper-image-uri  # Replace with your actual image URI

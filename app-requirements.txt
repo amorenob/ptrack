@@ -1,0 +1,58 @@
+# Price Tracking Web App Requirements
+
+## 1. Project Overview
+- Project Name: ptrack
+- Description: A web app that allows users to track the price of products across different e-commerce platforms and get alerts when the price drops below a certain threshold.
+
+## 2. Core Features
+- [ ] Product search functionality
+- [ ] Price history tracking
+- [ ] Price alerts
+- [ ] User accounts and preferences
+- [ ] Prices are scraped from the websites and stored in a database periodically
+- [ ] The app analyzes the database and sends a notification to the user when the price of a product they are tracking drops below a certain threshold
+- [ ] The app allows users to set price alerts for products they are interested in
+- [ ] The app allows users to view the price history of a product
+- [ ] The app shows best oferts every day
+
+## 3. AWS Services to be Used
+- [ ] Amazon EC2 (for hosting the web application)
+- [ ] Amazon RDS (for database)
+- [ ] Amazon S3 (for storing static assets)
+- [ ] AWS Lambda (for serverless functions)
+- [ ] Amazon CloudWatch (for monitoring and alerts)
+
+## 4. Data Sources
+- [ ] https://www.exito.com
+- [ ] https://www.falabella.com
+- [ ] https://www.alkosto.com/
+- [ ] https://www.linio.com.co/
+- [ ] https://www.homecenter.com.co/
+
+## 5. User Interface
+- [ ] Responsive design desktop
+- [ ] home page
+- [ ] product page
+- [ ] user dashboard
+- [ ] login page
+- [ ] register page
+
+## 6. Frontend Requirements
+- [ ] React
+- [ ] Next.js
+- [ ] Tailwind CSS
+
+## 7. Backend Requirements
+- [ ] API development
+- [ ] Data scraping and processing
+- [ ] Database design
+
+## 8. Scraping Tools
+- [ ] scrapy
+
+## 9. Security Requirements
+- [ ] User authentication and authorization
+- [ ] Data encryption
+
+## 10. Future Enhancements
+- [ ] [List potential features for future versions]
