@@ -49,6 +49,9 @@ Thumbs.db
 # AWS
 .serverless/
 
+# AWS SAM
+.aws-sam/
+
 # Environment variables
 .env
 .env.local

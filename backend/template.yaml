@@ -1,0 +1,347 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: 'PScraper for colombians most popular marketplaces'
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.11
+    Environment:
+      Variables:
+        SQS_QUEUE_URL: !Ref ScrapingQueue
+        ECS_CLUSTER_NAME: !Ref EcsCluster
+        ECS_TASK_DEFINITION: !Ref EcsTaskDefinition
+  
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Environment for the application (dev or prod)
+
+Resources:
+
+  # Product table
+  ProductTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "products-${Environment}"
+      AttributeDefinitions:
+        - AttributeName: product_id
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+        - AttributeName: site
+          AttributeType: S
+      KeySchema:
+        - AttributeName: product_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: SiteIndex
+          KeySchema:
+            - AttributeName: site
+              KeyType: HASH
+            - AttributeName: category
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL        
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  ScrapingApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+  
+  PriceHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "price-history-${Environment}"
+      AttributeDefinitions:
+        - AttributeName: product_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: product_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  ScrapingTaskLauncher:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ./src/task_launcher
+      Events:
+        SqsEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ScrapingQueue.Arn
+            BatchSize: 1
+            MaximumBatchingWindowInSeconds: 5
+      Environment:
+        Variables:
+          SUBNET_1: !Ref PublicSubnet1
+          SUBNET_2: !Ref PublicSubnet2
+          SECURITY_GROUP: !Ref EcsSecurityGroup
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - ecs:RunTask
+                - ecs:DescribeTasks
+                - ecs:DescribeTaskDefinition
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - iam:PassRole
+              Resource: 
+                - !GetAtt EcsTaskExecutionRole.Arn
+                - !GetAtt EcsTaskRole.Arn
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ./src/api
+      Events:
+        PostUrls:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ScrapingApi
+            Path: /scrape
+            Method: post
+        GetStatus:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ScrapingApi
+            Path: /status/{task_id}
+            Method: get
+
+  ScrapingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "scraping-queue-${Environment}"
+      VisibilityTimeout: 30
+
+  # CloudWatch Log Group
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/ecs/${AWS::StackName}-scraper'
+      RetentionInDays: 7
+
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "scraping-cluster-${Environment}"
+
+  EcsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "scraping-task-${Environment}"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: '1024'
+      Memory: '2048'
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: scraper
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EcrRepository}:latest'
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: SQS_QUEUE_URL
+              Value: !Ref ScrapingQueue
+            - Name: PRODUCT_TABLE
+              Value: !Ref ProductTable
+            - Name: PRICE_HISTORY_TABLE
+              Value: !Ref PriceHistoryTable
+  
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${AWS::StackName}-scraper'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+    
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ECSExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: '*'
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:CreateLogGroup
+                Resource: 
+                  - !GetAtt LogGroup.Arn
+                  - !Sub "${LogGroup.Arn}:log-stream:*"
+  EcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SQSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: !GetAtt ScrapingQueue.Arn
+        - PolicyName: DynamoDBAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt ProductTable.Arn
+                  - !GetAtt PriceHistoryTable.Arn
+
+# VPC and Networking (required for Fargate)
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.123.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.123.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.123.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  SubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # Security Group for ECS Tasks
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ECS tasks
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+  ApiUrl:
+    Description: 'API Gateway endpoint URL'
+    Value: !Sub 'https://${ScrapingApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiUrl'
+
+  SqsQueueUrl:
+    Description: 'SQS Queue URL'
+    Value: !Ref ScrapingQueue
+    Export:
+      Name: !Sub '${AWS::StackName}-SqsQueueUrl'
+
+  EcrRepositoryUri:
+    Description: 'ECR Repository URI'
+    Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EcrRepository}'
+    Export:
+      Name: !Sub '${AWS::StackName}-EcrRepositoryUri'
+
+  EcsClusterName:
+    Description: 'ECS Cluster Name'
+    Value: !Ref EcsCluster
+    Export:
+      Name: !Sub '${AWS::StackName}-EcsClusterName'
