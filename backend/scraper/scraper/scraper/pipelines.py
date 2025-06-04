@@ -67,6 +67,7 @@ class CleanItemPipeline(object):
 # Dynamodb pipeline to store items in AWS DynamoDB
 class DynamoDBPipeline:
     def __init__(self):
+        # TODO: move this to settings.py
         # get env
         PRODUCTS_TABLE = os.getenv('PRODUCTS_TABLE', 'products')
         PRICES_TABLE = os.getenv('PRICE_HISTORY_TABLE', 'prices')

@@ -18,6 +18,7 @@ class ProductItem(scrapy.Item):
     url = scrapy.Field()
     description = scrapy.Field()
     category = scrapy.Field()
+    timestamp = scrapy.Field()  # Timestamp of when the item was scraped
     last_updated = scrapy.Field()  # Timestamp of the last update
     features = scrapy.Field()  # List of features or specifications
     current_price = scrapy.Field()  # Current price of the product

@@ -1,4 +1,5 @@
 fastapi
 uvicorn
 scrapy
+scrapy-playwright
 boto3

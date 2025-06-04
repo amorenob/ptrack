@@ -176,6 +176,9 @@ Resources:
               Value: !Ref ProductTable
             - Name: PRICE_HISTORY_TABLE
               Value: !Ref PriceHistoryTable
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+
   
   EcrRepository:
     Type: AWS::ECR::Repository

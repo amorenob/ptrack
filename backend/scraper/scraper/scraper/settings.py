@@ -46,6 +46,18 @@ ROBOTSTXT_OBEY = True
 #    "Accept-Language": "en",
 #}
 
+### Playwright settings
+DOWNLOAD_HANDLERS = {
+    "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+}
+TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+###
+PLAYWRIGHT_LAUNCH_OPTIONS = {
+    "headless": True,
+    "timeout": 20 * 1000,  # 20 seconds
+}
+
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 #SPIDER_MIDDLEWARES = {
@@ -54,9 +66,10 @@ ROBOTSTXT_OBEY = True
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    "scraper.middlewares.ScraperDownloaderMiddleware": 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+   #'scrapy_playwright.middleware.ScrapyPlaywrightMiddleware': 800,
+   "scraper.middlewares.BlockMediaMiddleware": 543,
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html

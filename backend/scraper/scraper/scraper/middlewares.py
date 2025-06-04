@@ -4,6 +4,9 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+from scrapy.http import HtmlResponse
+from scrapy_playwright.page import PageMethod
+
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
@@ -98,3 +101,41 @@ class ScraperDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+
+
+
+class BlockMediaMiddleware:
+    def __init__(self):
+        self.blocked_resource_types = [
+            "image",
+            "media",
+            "font",
+            "stylesheet",
+        ]
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        middleware = cls()
+        return middleware
+
+    async def process_request(self, request, spider):
+        if not request.meta.get("playwright"):
+            return None
+
+        async def handle_route(route, route_request):
+            blocked_exts = [".jpg", ".png", ".gif", ".css", ".mp4", ".webm", ".svg"]
+            url = route_request.url.lower()
+            if (
+                route_request.resource_type in self.blocked_resource_types
+                or any(ext in url for ext in blocked_exts)
+            ):
+                spider.logger.info(f"Blocking resource: {route_request.url}")
+                await route.abort()
+            else:
+                await route.continue_()
+
+        request.meta["playwright_page_methods"] = request.meta.get("playwright_page_methods", []) + [
+            PageMethod("route", "**/*", handle_route)
+        ]
