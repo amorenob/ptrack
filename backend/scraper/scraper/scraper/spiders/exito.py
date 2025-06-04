@@ -88,13 +88,12 @@ class ExitoSpider(scrapy.Spider):
             item["name"] = product.xpath(".//h3[contains(@class,'styles_name')]/text()").get()
             item["url"] = "https://www.exito.com" + product.xpath(".//@href").get()
             item["current_price"] = product.xpath(".//div[contains(@class,'ProductPrice_container')]/p/text()").get()
-            item["original_price"] = product.xpath(".//div[contains(@class,'promotion_price-dashed')]/p/text()").get()
+            item["original_price"] = product.xpath(".//p[contains(@class,'promotion_price-dashed')]/text()").get()
             item["discount"] = product.xpath(".//div[contains(@class,'promotion_discount')]/span/text()").get()
             item["category"] = category
             #item['brand'] = product.xpath(".//span[contains(@class,'productBrandName')]/text()").get()
             #item["tags"] = tags + [item["brand"]]
             item["description"] = ""
-            item["site"] = "exito.com"
             yield item
 
         #await page.close()
