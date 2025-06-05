@@ -6,9 +6,19 @@ from scrapy.http import HtmlResponse
 from scraper.items import ProductItem
 import os
 
+def abort_request(request):
+    return (
+        request.resource_type in ["image", "media", "stylesheet"]  # Block resource-heavy types
+        or any(ext in request.url for ext in [".jpg", ".png", ".gif", ".css", ".mp4", ".webm"])  # Block specific file extensions
+    )
+
 class GenericSpider(scrapy.Spider):
     name = "generic"
     allowed_domains = ["generic.com"] 
+    
+    #custom_settings = {
+    #    "PLAYWRIGHT_ABORT_REQUEST": abort_request,  # Aborting unnecessary requests
+    #}
 
     def __init__(self, config_s3_uri, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -69,7 +79,10 @@ class GenericSpider(scrapy.Spider):
         for product in products:
             item = ProductItem()
             item["name"] = product.xpath(self.selectors["name"]).get()
-            item["url"] = self.base_url + product.xpath(self.selectors["url"]).get()
+            item["url"] = product.xpath(self.selectors["url"]).get()
+            # If url is sref path adde base url
+            if item["url"] and not item["url"].startswith("http"):
+                item["url"] = self.base_url + item["url"]
             item["current_price"] = product.xpath(self.selectors["current_price"]).get()
             item["original_price"] = product.xpath(self.selectors["original_price"]).get()
             item["discount"] = product.xpath(self.selectors["discount"]).get()

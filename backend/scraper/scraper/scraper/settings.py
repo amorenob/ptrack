@@ -80,8 +80,8 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   "scraper.pipelines.PlusPipeline": 100,
-   "scraper.pipelines.CleanItemPipeline": 300,
+   "scraper.pipelines.CleanItemPipeline": 100,
+   "scraper.pipelines.PlusPipeline": 300,
    "scraper.pipelines.DynamoDBPipeline": 400,
 }
 

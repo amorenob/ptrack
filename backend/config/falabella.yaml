@@ -1,0 +1,17 @@
+website: 'Falabella'
+base_url: 'https://www.falabella.com.co'
+
+targets:
+  - tags: ['televisores', 'tecnologia']
+    url: 'https://www.falabella.com.co/falabella-co/category/cat5420971/Smart-TV'
+    category: 'tecnologia'
+    max_pages: 2
+
+selectors:
+  wait_for: "//div[contains(@class,'search-results-list')]"
+  product: "//div[contains(@class,'search-results-list')]"
+  name: ".//b[contains(@class,'pod-subTitle')]/text()"
+  url: ".//@href"
+  current_price: ".//li[contains(@class,'prices-0')]/div/span/text()"
+  original_price: ".//li[contains(@class,'prices-1')]/div/span/text()"
+  discount: ".//div[contains(@class,'discount-badge')]/span/text()"

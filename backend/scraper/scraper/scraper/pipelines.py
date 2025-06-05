@@ -30,6 +30,7 @@ class PlusPipeline:
         # Add urlshash and site to the item
         url = item.get('url', '')
         if url:
+            
             item['product_id'] = hashlib.sha256(url.encode()).hexdigest().lower()
             item['site'] = get_site(url)
         # timestamp in seconds
@@ -42,7 +43,6 @@ class PlusPipeline:
             item['original_price'] = item.get('current_price', 0)
         
         return item
-
 
 
 class CleanItemPipeline(object):
@@ -58,6 +58,16 @@ class CleanItemPipeline(object):
         for key in item.keys():
             if isinstance(item[key], str):
                 item[key] = item[key].strip()
+                
+        # Remove string parameters from URL
+        if 'url' in item and isinstance(item['url'], str):
+            # Remove query parameters from URL
+            item['url'] = re.sub(r'\?.*$', '', item['url'])
+            # Remove fragment identifiers from URL
+            item['url'] = re.sub(r'#.*$', '', item['url'])
+            # Ensure URL starts with http or https
+            if not item['url'].startswith(('http://', 'https://')):
+                item['url'] = 'https://' + item['url']
         
         for field in ['current_price', 'original_price', 'discount']:
             if field in item and isinstance(item[field], str):
