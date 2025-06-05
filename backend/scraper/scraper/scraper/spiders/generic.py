@@ -27,6 +27,7 @@ class GenericSpider(scrapy.Spider):
         self.config = self.load_config_from_s3(config_s3_uri)
         self.selectors = self.config["selectors"]
         self.base_url = self.config.get("base_url", "https://www.generic.com")
+        self.search_url = self.config.get("search_url", "")
         self.allowed_domains = self.config.get("base_url", "https://www.generic.com").replace("https://", "").replace("http://", "").split("/")[0].split(",")
 
         targets_env = os.environ.get('TARGETS', '[]')
@@ -46,9 +47,10 @@ class GenericSpider(scrapy.Spider):
 
     def start_requests(self):
         for target in self.targets:
-            url = target["url"]
+            keyword = target["keyword"]
+            url = self.search_url.format(query=keyword) 
             max_pages = target.get("max_pages", 1)
-            for page in range(1, max_pages + 1):
+            for page in range(0, max_pages + 1):
                 page_url = f"{url}?page={page}"
                 yield scrapy.Request(
                     url=page_url,

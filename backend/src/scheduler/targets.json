@@ -5,19 +5,19 @@
         "site": "alkosto",
         "targets": [
             {
-                "url": "https://www.alkosto.com/tv/smart-tv/c/BI_120_ALKOS",
+                "keyword": "televisores",
                 "category": "tecnologia",
                 "tags": ["televisores", "tecnologia"],
                 "max_pages": 1
             },
             {
-                "url": "https://www.alkosto.com/celulares/smartphones/c/BI_101_ALKOS",
+                "keyword": "celulares",
                 "category": "tecnologia",
                 "tags": ["celulares", "tecnologia"],
                 "max_pages": 1
             },
             {
-                "url": "https://www.alkosto.com/electrodomesticos/grandes-electrodomesticos/refrigeracion/c/BI_0610_ALKOS",
+                "keyword": "neveras",
                 "category": "electrodomesticos",
                 "tags": ["refrigeracion", "hogar"],
                 "max_pages": 1
@@ -30,13 +30,13 @@
         "site": "exito",
         "targets": [
             {
-                "url": "https://www.exito.com/tecnologia/televisores",
+                "keyword": "televisores",
                 "category": "tecnologia",
                 "tags": ["celulares", "tecnologia"],
                 "max_pages": 1
             },
             {
-                "url": "https://www.exito.com/tecnologia/computadores/portatiles",
+                "keyword": "celulares",
                 "category": "tecnologia",
                 "tags": ["televisores", "tecnologia"],
                 "max_pages": 1

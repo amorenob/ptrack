@@ -1,11 +1,7 @@
 website: "Alkosto"
 base_url: "https://www.alkosto.com"
 
-targets:
-  - tags: ["televisores", "tecnologia"]
-    url: "https://www.alkosto.com/tv/smart-tv/c/BI_120_ALKOS"
-    category: "tecnologia"
-    max_pages: 2
+search_url: "https://www.alkosto.com/search?text={query}&sort=relevance"
 
 selectors:
   wait_for: "//div[contains(@class,'product__item__information')]"

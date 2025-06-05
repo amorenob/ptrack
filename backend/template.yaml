@@ -249,7 +249,7 @@ Resources:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
             - Name: DEPLOMENT_V
-              Value: "9"
+              Value: "10"
   
   EcrRepository:
     Type: AWS::ECR::Repository

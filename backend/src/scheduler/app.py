@@ -12,6 +12,7 @@ sqs_client = boto3.client('sqs', region_name=AWS_REGION)
 def lambda_handler(event, context):
     
     # Load tarjets from targets.json file
+    # TODO: Targets should be loaded from S3 bucket
     try:
         with open('targets.json', 'r') as file:
             jobs_f = json.load(file)

@@ -1,11 +1,7 @@
 website: "Exito"
 base_url: "https://www.exito.com"
 
-targets:
-  - tags: ["televisores", "tecnologia"]
-    url: "https://www.exito.com/tecnologia/televisores"
-    category: "tecnologia"
-    max_pages: 2
+search_url: "https://www.exito.com/s?q={query}&sort=score_desc"
 
 selectors:
   wait_for: "//div[contains(@class,'product-grid_fs-product-grid')]"
