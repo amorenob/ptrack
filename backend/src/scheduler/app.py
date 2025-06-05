@@ -11,41 +11,35 @@ sqs_client = boto3.client('sqs', region_name=AWS_REGION)
 
 def lambda_handler(event, context):
     
-    message = {
-        'spider_name': 'generic',
-        'site': 'alkosto',
-        'config_s3_uri': f's3://{os.environ.get("CONFIG_S3_BUCKET", "")}/config/alkosto.yaml',
-        'targets': [
-            {
-                'url': 'https://www.alkosto.com/tv/smart-tv/c/BI_120_ALKOS',
-                'category': 'tecnologia',
-                'tags': ['televisores', 'tecnologia'],
-                'max_pages': 1
-            },
-            {
-                'url': 'https://www.alkosto.com/celulares/smartphones/c/BI_101_ALKOS',
-                'category': 'tecnologia',
-                'tags': ['celulares', 'tecnologia'],
-                'max_pages': 1,
-            },
-            {
-                'url': 'https://www.alkosto.com/electrodomesticos/grandes-electrodomesticos/refrigeracion/c/BI_0610_ALKOS',
-                'category': 'electrodomesticos',
-                'tags': ['regrigeracion', 'hogar'],
-                'max_pages': 1
-            }
-        ]
-    }
-    # send message to SQS queue
-    response = sqs_client.send_message(
-        QueueUrl=SCRAPING_QUEUE_URL,
-        MessageBody=json.dumps(message)
-    )
+    # Load tarjets from targets.json file
+    try:
+        with open('targets.json', 'r') as file:
+            jobs_f = json.load(file)
+    except FileNotFoundError:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': 'targets.json file not found'
+            })
+        }   
+    print(f"Loaded {len(jobs_f['jobs'])} jobs from targets.json")
+    # For each job, send a message to the SQS queue
+    msg_count = 0
+    for job in jobs_f['jobs']:
+    
+        # send message to SQS queue
+        response = sqs_client.send_message(
+           QueueUrl=SCRAPING_QUEUE_URL,
+           MessageBody=json.dumps(job)
+        )
+        
+        msg_count += 1
+        print(f"Message sent to SQS queue: {response['MessageId']} for job: {job['job_name']}")
+        
     
     return {
         'statusCode': 200,
         'body': json.dumps({
-            'message': 'Message sent to SQS queue',
-            'messageId': response['MessageId']
+            'message': f'{msg_count} Messages sent to SQS queue',
         })
     }

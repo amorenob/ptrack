@@ -21,7 +21,7 @@ def lambda_handler(event, context):
             body = json.loads(record['body'])
             spider_name = body.get('spider_name', 'default_spider')
             site = body.get('site', 'default_site')
-            config_s3_uri = body.get('config_s3_uri', f's3://{os.environ.get("CONFIG_S3_BUCKET", "")}/config/{site}.yaml')
+            config_s3_uri = f's3://{os.environ.get("CONFIG_S3_BUCKET", "")}/config/{site}.yaml'
             
             targets = body.get('targets', [])
 
