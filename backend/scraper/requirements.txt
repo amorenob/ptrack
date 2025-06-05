@@ -3,3 +3,4 @@ uvicorn
 scrapy
 scrapy-playwright
 boto3
+pyyaml

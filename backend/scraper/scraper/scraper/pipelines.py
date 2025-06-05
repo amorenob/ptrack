@@ -36,6 +36,11 @@ class PlusPipeline:
         item['timestamp'] = int(time.time())
         # last updated timestamp in ISO format
         item['last_updated'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(item['timestamp']))
+        
+        # If original_price is not present, set it to current_price
+        if item['original_price'] == '':
+            item['original_price'] = item.get('current_price', 0)
+        
         return item
 
 
@@ -69,8 +74,8 @@ class DynamoDBPipeline:
     def __init__(self):
         # TODO: move this to settings.py
         # get env
-        PRODUCTS_TABLE = os.getenv('PRODUCTS_TABLE', 'products')
-        PRICES_TABLE = os.getenv('PRICE_HISTORY_TABLE', 'prices')
+        PRODUCTS_TABLE = os.getenv('PRODUCTS_TABLE', 'products-dev')
+        PRICES_TABLE = os.getenv('PRICE_HISTORY_TABLE', 'price-history-dev')
         # set aws region
         AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
         self.dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)

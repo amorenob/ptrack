@@ -1,0 +1,17 @@
+website: "Exito"
+base_url: "https://www.exito.com"
+
+targets:
+  - tags: ["televisores", "tecnologia"]
+    url: "https://www.exito.com/tecnologia/televisores"
+    category: "tecnologia"
+    max_pages: 2
+
+selectors:
+  wait_for: "//div[contains(@class,'product-grid_fs-product-grid')]"
+  product: "//div[contains(@class,'productCard_productInfo')]"
+  name: ".//h3[contains(@class,'styles_name')]/text()"
+  url: ".//@href"
+  current_price: ".//div[contains(@class,'ProductPrice_container')]/p/text()"
+  original_price: ".//p[contains(@class,'promotion_price-dashed')]/text()"
+  discount: ".//div[contains(@class,'promotion_discount')]/span/text()"

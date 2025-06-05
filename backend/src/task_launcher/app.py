@@ -15,6 +15,16 @@ ecs_client = boto3.client('ecs')
 
 def lambda_handler(event, context):
     # Launch ECS task
+    spider_name = event.get('spider_name', 'default_spider')
+    site = event.get('site', 'default_site')
+    config_s3_uri = event.get('config_s3_uri', f's3://{os.environ.get("CONFIG_S3_BUCKET", "")}/config/{site}.yaml')
+    if not spider_name:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({
+                'message': 'spider_name is required in the event body'})
+        }
+    
     response = ecs_client.run_task(
         cluster=CLUSTER_NAME,
         taskDefinition=TASK_DEFINITION,
@@ -25,8 +35,13 @@ def lambda_handler(event, context):
                 'securityGroups': [SECURITY_GROUP],
                 'assignPublicIp': 'ENABLED'
             }
-        }
-    )
+        },
+        overrides={
+            'containerOverrides': [
+                { 'name': 'scraper',
+                  'command': ['scrapy', 'crawl', spider_name, '-a', f'config_s3_uri={config_s3_uri}'],
+                }]
+            })
 
     return {
         'statusCode': 200,

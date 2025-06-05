@@ -85,7 +85,7 @@ class AlkostoSpider(scrapy.Spider):
             item = ProductItem()
             item["name"] = product.xpath(".//h3[contains(@class,'product__item__top__title')]/text()").get()
             item["url"] = "https://www.alkosto.com" + product.xpath(".//@href").get()
-            item["current_price"] = product.xpath(".//p[contains(@class,'product__price--discounts__price')]/span/text()").get()
+            item["current_price"] = product.xpath(".//span[contains(@class,'price')]/text()").get()
             item["original_price"] = product.xpath(".//p[contains(@class,'product__price--discounts__old')]/text()").get()
             item["discount"] = product.xpath(".//span[contains(@class,'label-offer')]/text()").get()
             item["category"] = category

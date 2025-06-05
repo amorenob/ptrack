@@ -22,6 +22,18 @@ Parameters:
     Description: Environment for the application (dev or prod)
 
 Resources:
+  # S3 Bucket for static files
+  StaticFilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "static-files-${AWS::AccountId}-${Environment}"
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
 
   # Product table
   ProductTable:
@@ -95,6 +107,7 @@ Resources:
           SUBNET_1: !Ref PublicSubnet1
           SUBNET_2: !Ref PublicSubnet2
           SECURITY_GROUP: !Ref EcsSecurityGroup
+          CONFIG_S3_BUCKET: !Ref StaticFilesBucket
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -172,13 +185,14 @@ Resources:
           Environment:
             - Name: SQS_QUEUE_URL
               Value: !Ref ScrapingQueue
-            - Name: PRODUCT_TABLE
+            - Name: PRODUCTS_TABLE
               Value: !Ref ProductTable
             - Name: PRICE_HISTORY_TABLE
               Value: !Ref PriceHistoryTable
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-
+            - Name: DEPLOMENT_V
+              Value: "9"
   
   EcrRepository:
     Type: AWS::ECR::Repository
@@ -255,6 +269,16 @@ Resources:
                 Resource:
                   - !GetAtt ProductTable.Arn
                   - !GetAtt PriceHistoryTable.Arn
+        - PolicyName: staticFilesAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub 'arn:aws:s3:::static-files-${AWS::AccountId}-${Environment}/*'
 
 # VPC and Networking (required for Fargate)
   VPC:
