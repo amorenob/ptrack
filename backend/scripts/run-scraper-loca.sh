@@ -22,4 +22,4 @@ fi
 docker run --rm -it \
     $DOCKER_ENV_FLAGS \
     priceco-scraper scrapy crawl generic \
-    -a config_s3_uri="s3://static-files-${AWS_ACCOUNT_ID}-dev/config/exito.yaml" \
+    -a config_s3_uri="s3://static-files-${AWS_ACCOUNT_ID}-dev/config/falabella.yaml" \

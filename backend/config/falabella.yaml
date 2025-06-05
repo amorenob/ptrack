@@ -1,5 +1,6 @@
 website: 'Falabella'
 base_url: 'https://www.falabella.com.co'
+block_media: false
 
 targets:
   - tags: ['televisores', 'tecnologia']

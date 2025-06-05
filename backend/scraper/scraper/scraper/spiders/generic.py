@@ -1,5 +1,6 @@
 import scrapy
 import yaml
+import json
 import boto3
 from scrapy_playwright.page import PageMethod
 from scrapy.http import HtmlResponse
@@ -24,11 +25,19 @@ class GenericSpider(scrapy.Spider):
         super().__init__(*args, **kwargs)
         self.config_s3_uri = config_s3_uri
         self.config = self.load_config_from_s3(config_s3_uri)
-        self.targets = self.config["targets"]
         self.selectors = self.config["selectors"]
         self.base_url = self.config.get("base_url", "https://www.generic.com")
         self.allowed_domains = self.config.get("base_url", "https://www.generic.com").replace("https://", "").replace("http://", "").split("/")[0].split(",")
 
+        targets_env = os.environ.get('TARGETS', '[]')
+        if targets_env:
+            try:
+                self.targets = json.loads(targets_env)
+            except json.JSONDecodeError:
+                self.targets = []
+        else:
+            print("No TARGETS environment variable found, using empty list.")
+        
     def load_config_from_s3(self, s3_uri):
         s3 = boto3.client("s3")
         bucket, key = s3_uri.replace("s3://", "").split("/", 1)

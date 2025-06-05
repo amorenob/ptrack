@@ -14,34 +14,48 @@ ecs_client = boto3.client('ecs')
 
 
 def lambda_handler(event, context):
-    # Launch ECS task
-    spider_name = event.get('spider_name', 'default_spider')
-    site = event.get('site', 'default_site')
-    config_s3_uri = event.get('config_s3_uri', f's3://{os.environ.get("CONFIG_S3_BUCKET", "")}/config/{site}.yaml')
-    if not spider_name:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({
-                'message': 'spider_name is required in the event body'})
-        }
     
-    response = ecs_client.run_task(
-        cluster=CLUSTER_NAME,
-        taskDefinition=TASK_DEFINITION,
-        launchType='FARGATE',
-        networkConfiguration={
-            'awsvpcConfiguration': {
-                'subnets': [SUBNET_1, SUBNET_2],
-                'securityGroups': [SECURITY_GROUP],
-                'assignPublicIp': 'ENABLED'
-            }
-        },
-        overrides={
-            'containerOverrides': [
-                { 'name': 'scraper',
-                  'command': ['scrapy', 'crawl', spider_name, '-a', f'config_s3_uri={config_s3_uri}'],
-                }]
-            })
+    for record in event.get('Records', []):
+        # Process SQS message
+        if 'body' in record:
+            body = json.loads(record['body'])
+            spider_name = body.get('spider_name', 'default_spider')
+            site = body.get('site', 'default_site')
+            config_s3_uri = body.get('config_s3_uri', f's3://{os.environ.get("CONFIG_S3_BUCKET", "")}/config/{site}.yaml')
+            
+            targets = body.get('targets', [])
+
+            if not spider_name or not site or not config_s3_uri:
+                return {
+                    'statusCode': 400,
+                    'body': json.dumps({
+                        'message': 'Missing required parameters: spider_name, site, or config_s3_uri'
+                    })
+                }
+
+        response = ecs_client.run_task(
+            cluster=CLUSTER_NAME,
+            taskDefinition=TASK_DEFINITION,
+            launchType='FARGATE',
+            networkConfiguration={
+                'awsvpcConfiguration': {
+                    'subnets': [SUBNET_1, SUBNET_2],
+                    'securityGroups': [SECURITY_GROUP],
+                    'assignPublicIp': 'ENABLED'
+                }
+            },
+            overrides={
+                'containerOverrides': [
+                    { 'name': 'scraper',
+                     'environment': [
+                        {'name': 'SPIDER_NAME', 'value': spider_name},
+                        {'name': 'SITE', 'value': site},
+                        {'name': 'CONFIG_S3_URI', 'value': config_s3_uri},
+                        {'name': 'TARGETS', 'value': json.dumps(targets)}
+                    ],
+                    'command': ['scrapy', 'crawl', spider_name, '-a', f'config_s3_uri={config_s3_uri}'],
+                    }]
+                })
 
     return {
         'statusCode': 200,

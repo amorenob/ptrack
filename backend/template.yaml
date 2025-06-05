@@ -63,6 +63,39 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
 
+  # Table for targets 
+  TargetTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "targets-${Environment}"
+      AttributeDefinitions:
+        - AttributeName: target_id
+          AttributeType: S
+        - AttributeName: website
+          AttributeType: S
+        - AttributeName: next_scan
+          AttributeType: N
+
+      KeySchema:
+        - AttributeName: target_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: WebsiteIndex
+          KeySchema:
+            - AttributeName: website
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL 
+        - IndexName: NextScanIndex
+          KeySchema:
+            - AttributeName: next_scan
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL       
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
   ScrapingApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -123,6 +156,30 @@ Resources:
               Resource: 
                 - !GetAtt EcsTaskExecutionRole.Arn
                 - !GetAtt EcsTaskRole.Arn
+
+  # Scheduler function to trigger scraping tasks
+  ScrapingScheduler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ./src/scheduler
+      # Disabled for now
+      # Events:
+      #   ScheduleEvent:
+      #     Type: Schedule
+      #     Properties:
+      #       Schedule: 'rate(1 hour)'
+      Environment:
+        Variables:
+          SCRAPING_QUEUE_URL: !Ref ScrapingQueue
+          CONFIG_S3_BUCKET: !Ref StaticFilesBucket
+      Policies: 
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt ScrapingQueue.Arn
 
   ApiFunction:
     Type: AWS::Serverless::Function
