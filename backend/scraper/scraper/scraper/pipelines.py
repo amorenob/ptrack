@@ -11,6 +11,7 @@ import hashlib
 import re
 import time
 import os
+from scrapy.exceptions import DropItem
 
 def get_site(url):
     """
@@ -76,6 +77,10 @@ class CleanItemPipeline(object):
                 # Convert price fields to int if they are not empty
                 item[field] = int(item[field]) if item[field] else 0
 
+        # no url dicard item
+        if 'url' not in item or not item['url']:
+            spider.logger.warning("Item discarded due to missing URL")
+            raise DropItem("Missing URL in item")
             
         return item
 

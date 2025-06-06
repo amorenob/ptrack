@@ -51,7 +51,8 @@ def lambda_handler(event, context):
                         {'name': 'SPIDER_NAME', 'value': spider_name},
                         {'name': 'SITE', 'value': site},
                         {'name': 'CONFIG_S3_URI', 'value': config_s3_uri},
-                        {'name': 'TARGETS', 'value': json.dumps(targets)}
+                        {'name': 'TARGETS', 'value': json.dumps(targets)},
+                        {'name': 'CONFIG_S3_BUCKET', 'value': os.environ.get('CONFIG_S3_BUCKET', '')},
                     ],
                     'command': ['scrapy', 'crawl', spider_name, '-a', f'config_s3_uri={config_s3_uri}'],
                     }]
