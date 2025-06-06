@@ -10,9 +10,9 @@
 - **Scraping**: Automated price extraction using Scrapy for Colombian e-commerce sites.
 
 ## Features
-- Daily price scraping from multiple e-commerce websites
-- Product search functionality
+- Daily price scraping from multiple e-commerce websites (exito, falabella, alkosto)
 - Price history tracking
+- Periodically save html content to s3 for debugging 
 - Best offers display: To be implemented
 - Price alerts : To be implemented
 - Users: To be implemented
@@ -28,3 +28,6 @@
     - **config/**: Configuration for scraping targets one file for each website.
     - **scraper/**: Scrapy project for scraping product prices.
 - **frontend/**: Contains the frontend code (Google Chrome extension).
+
+# Disclaimer
+This project is for educational purposes only. It is not intended for production use and should not be used to scrape websites without permission. Always check the terms of service of the websites you scrape.
