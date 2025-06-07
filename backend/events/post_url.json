@@ -1,0 +1,32 @@
+{
+  "body": "{\"productUrl\": \"https://www.exito.com/celular-xiaomi-redmi-13-256-gb-8-gb-ram-dorado-3186659/p\", \"name\": \"Scheduler\"}",
+  "headers": {
+    "Content-Type": "text/plain"
+  },
+  "httpMethod": "POST",
+  "path": "/product/history",
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "requestContext": {
+    "accountId": "123456789012",
+    "resourceId": "123456",
+    "stage": "test",
+    "requestId": "test-request-id",
+    "identity": {
+      "cognitoIdentityPoolId": null,
+      "accountId": null,
+      "cognitoIdentityId": null,
+      "caller": null,
+      "sourceIp": "127.0.0.1",
+      "cognitoAuthenticationType": null,
+      "cognitoAuthenticationProvider": null,
+      "userArn": null,
+      "userAgent": "PostmanRuntime/7.28.4",
+      "user": null
+    },
+    "resourcePath": "/product/history",
+    "httpMethod": "POST",
+    "apiId": "your-api-id"
+  },
+  "isBase64Encoded": false
+}

@@ -191,7 +191,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ScrapingApi
-            Path: /scrape
+            Path: /product/history
             Method: post
         GetStatus:
           Type: Api
@@ -199,6 +199,30 @@ Resources:
             RestApiId: !Ref ScrapingApi
             Path: /status/{task_id}
             Method: get
+      Environment:
+        Variables:
+          PRODUCTS_TABLE: !Ref ProductTable
+          PRICE_HISTORY_TABLE: !Ref PriceHistoryTable
+          TARGET_TABLE: !Ref TargetTable
+          SQS_QUEUE_URL: !Ref ScrapingQueue
+
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+                - dynamodb:Query
+              Resource:
+                - !GetAtt ProductTable.Arn
+                - !GetAtt PriceHistoryTable.Arn
+                - !GetAtt TargetTable.Arn
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt ScrapingQueue.Arn
 
   ScrapingQueue:
     Type: AWS::SQS::Queue
